@@ -2,7 +2,7 @@ import express from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser" 
 
-import authRoutes from "../src/Routers/auth.register.js"
+import authRoutes from "./Routers/auth.register.js"
 import pg_info_Routes from "./Routers/pg_info.router.js"
 import pg_image_routes from "./Routers/pg_images.router.js"
 import pg_reviews from "./Routers/reviews.router.js"
@@ -15,14 +15,9 @@ app.use(cookieParser())
 
 // for cross platform operation with frontend and secure cookies
 app.use(cors({
-  origin: "http://localhost:3000",
+  origin: "http://localhost:5500",
   credentials: true
 }));
-
-
-
-
-
 
 app.use("/api/auth",authRoutes)
 
@@ -33,5 +28,10 @@ app.use("/api/pg_info/images",pg_image_routes)
 app.use("/api/reviews",pg_reviews)
 
 app.use("/api/filter",pg_filters)
+
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: err.message });
+});
 
 export default app;

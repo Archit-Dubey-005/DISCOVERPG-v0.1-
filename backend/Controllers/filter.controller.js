@@ -1,5 +1,5 @@
 import "dotenv/config"
-import db from "../DataBase/db.js"
+import db from "../../database/db.js"
 
 //filter the pgs by string concatenation of sql queries
 function getFilteredPgs(req, res) {

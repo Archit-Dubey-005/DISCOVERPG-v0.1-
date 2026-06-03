@@ -1,10 +1,7 @@
-import db from "../DataBase/db.js";
+import db from "../../database/db.js";
 
 //  pg info
 async function createPgListing(req, res) {
-
-
-
 
 const owner_id=req.owner.id
 

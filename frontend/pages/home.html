@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PG Houses Listing – DiscoverPG</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap">
+    <link rel="stylesheet" href="STYLE.CSS">
+    <link rel="stylesheet" href="home.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar" aria-label="Main navigation">
+            <div class="nav-title">
+                <a href="index.html" class="logo">DiscoverPG</a>
+            </div>
+            <div class="nav-right">
+                <a href="SERVICES.html">Services</a>
+                <a href="home.html">Map</a>
+                <a href="about.html">About</a>
+                <a href="wishlist.html">Wishlist</a>
+                <a href="post-pg.html" class="btn-post">Post your PG</a>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <div class="filter-bar" id="filterBar">
+            <input type="text" id="filterCity" placeholder="City" title="City">
+            <input type="text" id="filterArea" placeholder="Area" title="Area">
+            <select id="filterType">
+                <option value="">All types</option>
+                <option value="boys">Boys</option>
+                <option value="girls">Girls</option>
+                <option value="flat">Flat</option>
+            </select>
+            <input type="number" id="filterMinRent" placeholder="Min rent" min="0" title="Min rent">
+            <input type="number" id="filterMaxRent" placeholder="Max rent" min="0" title="Max rent">
+            <button type="button" id="filterApply">Apply</button>
+            <button type="button" id="filterClear">Clear</button>
+        </div>
+        <h1>PG Houses Near You</h1>
+        <div class="pg-grid" id="pgContainer"></div>
+    </div>
+    <script src="home.js"></script>
+</body>
+</html>

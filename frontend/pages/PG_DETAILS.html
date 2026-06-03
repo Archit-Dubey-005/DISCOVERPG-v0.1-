@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiscoverPG - Property Details</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap">
+    <link rel="stylesheet" href="STYLE.CSS">
+    <link rel="stylesheet" href="home.css">
+    <link rel="stylesheet" href="pg_details.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar" aria-label="Main navigation">
+            <div class="nav-title">
+                <a href="index.html" class="logo">DiscoverPG</a>
+            </div>
+            <div class="nav-right">
+                <a href="SERVICES.html">Services</a>
+                <a href="home.html">Map</a>
+                <a href="about.html">About</a>
+                <a href="wishlist.html">Wishlist</a>
+                <a href="post-pg.html" class="btn-post">Post your PG</a>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+    <div class="property-container" id="propertyContainer">
+        <!-- Back Button -->
+        <a href="home.html" class="back-button">Back to search results</a>
+
+        <!-- Dynamic Content Will Be Inserted Here -->
+        <div id="propertyContent"></div>
+    </div>
+    </div>
+
+    <script>
+        // Backend API (must match server port; serve frontend on http://localhost:3000 for CORS)
+        const API_BASE_URL = 'http://localhost:3100/api';
+
+        // Fallback sample data when fetch fails
+        const samplePropertyData = {
+            id: 1,
+            name: "Sunrise PG for Boys",
+            description: "A comfortable and safe paying guest accommodation for male students, located just 5 minutes from Delhi University. Features fully furnished rooms, high-speed WiFi, nutritious meals, and 24/7 security.",
+            images: [
+                "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800",
+                "https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800",
+                "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
+                "https://images.unsplash.com/photo-1560448204-603b3fc33ddc?w=800"
+            ],
+            location: "Near Delhi University, North Campus",
+            rating: 4.8,
+            totalReviews: 156,
+            price: 8500,
+            pricePeriod: "per month",
+            priceIncludes: ["Electricity", "WiFi", "Breakfast & Dinner"],
+            details: {
+                type: "Boys PG",
+                totalRooms: 12,
+                availableRooms: 3,
+                sharingOptions: ["Single", "Double", "Triple"],
+                floor: "Ground + 1st Floor",
+                area: "750 sq.ft",
+                furnishing: "Fully Furnished"
+            },
+            amenities: [
+                "High-Speed WiFi", "24/7 Electricity Backup", "Hot Water", "Air Conditioning",
+                "Study Table & Chair", "Wardrobe", "Geyser", "TV in Common Room", "Parking Available", "Visitor Area"
+            ],
+            owner: {
+                name: "Rajesh Kumar",
+                phone: "+91 98765 43210",
+                email: "rajesh@sunrisepg.com",
+                properties: 3,
+                memberSince: "2021"
+            }
+        };
+
+        // Maps backend API response (pg_info + images + reviews) to the shape expected by renderPropertyDetails.
+        // Backend: pg_listings (name, address, city, area, type, rent, deposit, food_available, rules, accommodations, total_beds, vacant_beds, rating, contact_phone)
+        function mapApiResponseToProperty(pg, images, reviews) {
+            if (!pg) return null;
+            const imgList = Array.isArray(images) && images.length
+                ? images.map(function (img) { return img.image_url; }).filter(Boolean)
+                : [];
+            const typeStr = pg.type ? String(pg.type).charAt(0).toUpperCase() + String(pg.type).slice(1) : '';
+            const amenities = pg.accommodations ? String(pg.accommodations).split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
+            const priceIncludes = [];
+            if (pg.food_available) priceIncludes.push('Food available');
+            return {
+                id: pg.id,
+                name: pg.name || 'PG House',
+                description: [pg.rules, pg.accommodations].filter(Boolean).join(' ') || 'No description.',
+                images: imgList,
+                location: [pg.address, pg.area, pg.city].filter(Boolean).join(', ') || 'Address not specified',
+                rating: pg.rating != null ? Number(pg.rating) : 0,
+                totalReviews: Array.isArray(reviews) ? reviews.length : 0,
+                reviews: Array.isArray(reviews) ? reviews : [],
+                price: pg.rent != null ? Number(pg.rent) : 0,
+                pricePeriod: 'per month',
+                priceIncludes: priceIncludes.length ? priceIncludes : ['Rent'],
+                details: {
+                    type: typeStr ? typeStr + ' PG' : 'PG',
+                    totalRooms: pg.total_beds ?? '-',
+                    availableRooms: pg.vacant_beds ?? '-',
+                    sharingOptions: ['Single', 'Double', 'Triple'],
+                    floor: '-',
+                    area: pg.area || '-',
+                    furnishing: '-'
+                },
+                amenities: amenities.length ? amenities : ['WiFi', 'Security', 'Water'],
+                owner: {
+                    name: 'Owner',
+                    phone: pg.contact_phone || '-',
+                    email: '-',
+                    properties: 0,
+                    memberSince: '-'
+                }
+            };
+        }
+
+        // Fetch property from backend: PG info, images, and reviews
+        async function fetchPropertyData(propertyId) {
+            const contentEl = document.getElementById('propertyContent');
+            contentEl.innerHTML = '<div class="loading">Loading property details...</div>';
+
+            if (!API_BASE_URL) {
+                await new Promise(function (r) { setTimeout(r, 800); });
+                renderPropertyDetails({ ...samplePropertyData, id: propertyId });
+                return;
+            }
+
+            try {
+                const [pgRes, imagesRes, reviewsRes] = await Promise.all([
+                    fetch(API_BASE_URL + '/pg_info/PG/' + encodeURIComponent(propertyId), { credentials: 'include' }),
+                    fetch(API_BASE_URL + '/pg_info/images/' + encodeURIComponent(propertyId) + '/images', { credentials: 'include' }),
+                    fetch(API_BASE_URL + '/reviews/pg/' + encodeURIComponent(propertyId), { credentials: 'include' })
+                ]);
+
+                if (!pgRes.ok) {
+                    if (pgRes.status === 404) {
+                        contentEl.innerHTML = '<div class="error">Property not found.</div>';
+                        return;
+                    }
+                    throw new Error('Failed to fetch property');
+                }
+
+                const pg = await pgRes.json();
+                const images = imagesRes.ok ? await imagesRes.json() : [];
+                const reviews = reviewsRes.ok ? await reviewsRes.json() : [];
+
+                const property = mapApiResponseToProperty(pg, images, reviews);
+                if (property) renderPropertyDetails(property);
+                else contentEl.innerHTML = '<div class="error">Invalid property data from server.</div>';
+            } catch (error) {
+                console.error('Error fetching property:', error);
+                contentEl.innerHTML = '<div class="error">Failed to load property. Showing sample data.</div>';
+                setTimeout(function () {
+                    renderPropertyDetails({ ...samplePropertyData, id: propertyId });
+                }, 1500);
+            }
+        }
+
+        // Renders property – safe for missing/partial data from backend
+        function renderPropertyDetails(property) {
+            const images = Array.isArray(property.images) && property.images.length ? property.images : [];
+            const details = property.details || {};
+            const owner = property.owner || {};
+            const amenities = Array.isArray(property.amenities) ? property.amenities : [];
+            const priceIncludes = Array.isArray(property.priceIncludes) ? property.priceIncludes : [];
+            const sharingOpts = Array.isArray(details.sharingOptions) ? details.sharingOptions : [];
+
+            window._imgPlaceholder = '<div class="image-placeholder">Image not available</div>';
+            const mainImgHtml = images[0]
+                ? '<img src="' + images[0].replace(/"/g, '&quot;') + '" alt="' + (property.name || '').replace(/"/g, '&quot;') + '" onerror="if(window._imgPlaceholder){this.onerror=null;this.parentElement.innerHTML=window._imgPlaceholder;}">'
+                : window._imgPlaceholder;
+            const thumbnailsHtml = images.map(function(img, index) {
+                const safe = img.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                return '<div class="thumbnail" onclick="changeMainImage(\'' + safe + '\')"><img src="' + img.replace(/"/g, '&quot;') + '" alt="Thumbnail ' + (index + 1) + '" onerror="this.onerror=null; this.style.display=\'none\';"></div>';
+            }).join('');
+
+            const reviews = Array.isArray(property.reviews) ? property.reviews : [];
+            const reviewsHtml = reviews.length
+                ? '<div class="reviews-section"><h2>Reviews (' + reviews.length + ')</h2>'
+                    + reviews.map(function (r) {
+                        var safeComment = (r.comment || '').replace(/</g, '&lt;');
+                        var safeName = (r.name || 'Guest').replace(/</g, '&lt;');
+                        var dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString() : '';
+                        return '<div class="review-item"><div class="review-header"><span class="review-author">' + safeName + '</span><span class="review-rating">⭐ ' + (r.rating || '-') + '</span></div><p class="review-comment">' + safeComment + '</p><div class="review-date">' + dateStr + '</div></div>';
+                    }).join('')
+                    + '</div>'
+                : '';
+
+            const content = ''
+                + '<div class="property-header">'
+                + '<h1>' + (property.name || 'PG House').replace(/</g, '&lt;') + '</h1>'
+                + '<div class="property-location">' + (property.location || '').replace(/</g, '&lt;') + '</div>'
+                + '<div class="property-rating">'
+                + '<span class="rating-badge">⭐ ' + (property.rating != null ? property.rating : '-') + '</span>'
+                + '<span class="reviews-count">' + (property.totalReviews != null ? property.totalReviews : 0) + ' reviews</span>'
+                + '</div></div>'
+                + '<div class="property-grid">'
+                + '<div class="property-gallery">'
+                + '<div class="main-image" id="mainImage">' + mainImgHtml + '</div>'
+                + '<div class="thumbnail-grid" id="thumbnailGrid">' + thumbnailsHtml + '</div>'
+                + '</div>'
+                + '<div class="property-info">'
+                + '<div class="property-description"><h2>About this Property</h2><p>' + (property.description || 'No description.').replace(/</g, '&lt;') + '</p></div>'
+                + '<div class="property-price">'
+                + '<div class="price-label">Starting from</div>'
+                + '<div class="price-amount">₹' + (property.price != null ? Number(property.price).toLocaleString() : '0') + '</div>'
+                + '<div class="price-period">' + (property.pricePeriod || 'per month') + '</div>'
+                + (priceIncludes.length ? '<div class="price-includes"><span>✅ ' + priceIncludes.join(' • ') + '</span></div>' : '')
+                + '</div>'
+                + (amenities.length ? '<div class="amenities-section"><h3>Popular Amenities</h3><div class="amenities-grid">'
+                    + amenities.slice(0, 8).map(function(a) { return '<div class="amenity-item">' + String(a).replace(/</g, '&lt;') + '</div>'; }).join('')
+                    + '</div></div>' : '')
+                + '<div class="action-buttons">'
+                + '<button class="primary-button" onclick="bookNow(' + (property.id != null ? property.id : '0') + ')">Book Now</button>'
+                + '<button class="secondary-button" onclick="addToWishlist(' + (property.id != null ? property.id : '0') + ')">❤️ Add to Wishlist</button>'
+                + '</div></div></div>'
+                + '<div class="details-section">'
+                + '<h2>Property Details</h2>'
+                + '<div class="details-grid">'
+                + '<div class="detail-card"><h4>Property Type</h4><div class="detail-value">' + (details.type || '-') + '</div></div>'
+                + '<div class="detail-card"><h4>Total Beds</h4><div class="detail-value">' + (details.totalRooms ?? '-') + ' (' + (details.availableRooms ?? '-') + ' vacant)</div></div>'
+                + '<div class="detail-card"><h4>Sharing Options</h4><div class="detail-value">' + (sharingOpts.length ? sharingOpts.join(' • ') : '-') + '</div></div>'
+                + '<div class="detail-card"><h4>Floor</h4><div class="detail-value">' + (details.floor || '-') + '</div></div>'
+                + '<div class="detail-card"><h4>Area</h4><div class="detail-value">' + (details.area || '-') + '</div></div>'
+                + '<div class="detail-card"><h4>Furnishing</h4><div class="detail-value">' + (details.furnishing || '-') + '</div></div>'
+                + '</div>'
+                + (amenities.length ? '<div style="margin-top: 40px;"><h3>All Amenities</h3><div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px;">'
+                    + amenities.map(function(a) { return '<div class="amenity-item">' + String(a).replace(/</g, '&lt;') + '</div>'; }).join('')
+                    + '</div></div>' : '')
+                + '</div>'
+                + reviewsHtml
+                + '<div class="owner-section">'
+                + '<div class="owner-info">'
+                + '<div class="owner-avatar">' + (owner.name ? String(owner.name).charAt(0).toUpperCase() : '?') + '</div>'
+                + '<div class="owner-details">'
+                + '<h3>' + (owner.name || 'Owner').replace(/</g, '&lt;') + '</h3>'
+                + '<p style="font-size: 13px; color: #888;">📞 ' + (owner.phone || '-') + '</p>'
+                + '</div></div>'
+                + '<button class="contact-owner" onclick="contactOwner(\'' + (property.id != null ? String(property.id) : '') + '\', \'' + (owner.phone || '').replace(/'/g, "\\'") + '\')">Contact Owner</button>'
+                + '</div>';
+
+            document.getElementById('propertyContent').innerHTML = content;
+        }
+
+        // Helper function to change main image
+        function changeMainImage(imageUrl) {
+            const mainImage = document.getElementById('mainImage');
+            mainImage.innerHTML = `<img src="${imageUrl}" alt="Property Image" style="width: 100%; height: 100%; object-fit: cover;">`;
+        }
+
+        // Back function
+        function goBack() {
+            window.history.back();
+        }
+
+        // Action functions
+        function bookNow(propertyId) {
+            alert(`Booking initiated for property ID: ${propertyId}`);
+            // TODO: Redirect to booking page
+        }
+
+        function addToWishlist(propertyId) {
+            alert(`Property ID: ${propertyId} added to wishlist`);
+            // TODO: Add to wishlist API call
+        }
+
+        function contactOwner(propertyId, phone) {
+            if (phone) {
+                window.location.href = 'tel:' + phone.replace(/\s/g, '');
+            } else {
+                alert('Contact number not available.');
+            }
+        }
+
+        // Initialize - Fetch property data when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get property ID from URL (e.g., property.html?id=123)
+            const urlParams = new URLSearchParams(window.location.search);
+            const propertyId = urlParams.get('id') || 1; // Default to 1 if no ID
+            
+            fetchPropertyData(propertyId);
+        });
+    </script>
+    </body>
+</html>

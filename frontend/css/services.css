@@ -1,0 +1,14 @@
+/* Custom styles for SERVICES.html page */
+
+/* Layout adjustment for students section */
+.for-students {
+    padding: 0 60px;
+}
+
+.student-services .feature-list {
+    margin-top: 25px;
+}
+
+.owner-card .service-icon {
+    margin-bottom: 20px;
+}
