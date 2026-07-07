@@ -1,4 +1,6 @@
-const API_BASE_URL = 'http://localhost:3100/api';
+const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? (window.location.port === '5500' ? 'http://localhost:3100/api' : `${window.location.origin}/api`)
+    : `${window.location.origin}/api`;
 
 let savedPGs = (JSON.parse(localStorage.getItem('savedPGs')) || []).map(id => String(id));
 

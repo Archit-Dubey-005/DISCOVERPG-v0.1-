@@ -1,5 +1,7 @@
 // API Base URL matching the backend server
-const API_BASE_URL = 'http://localhost:3100/api/auth';
+const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? (window.location.port === '5500' ? 'http://localhost:3100/api/auth' : `${window.location.origin}/api/auth`)
+    : `${window.location.origin}/api/auth`;
 
 // State management
 let currentRole = 'user'; // 'user' (Student) or 'owner' (PG Owner)
