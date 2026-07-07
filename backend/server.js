@@ -26,5 +26,7 @@ catch(err){
 
 StartServer();
 
+export default app;
+
 
 
