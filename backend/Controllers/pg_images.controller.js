@@ -1,4 +1,4 @@
-import db from "../../database/db.js";
+import db from "../../dataBase/db.js";
 import imageService from "../Services/pg_image.storage.services.js";
 
 

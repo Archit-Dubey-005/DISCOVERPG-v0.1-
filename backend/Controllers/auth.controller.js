@@ -1,5 +1,5 @@
 import "dotenv/config";
-import db from "../../database/db.js";
+import db from "../../dataBase/db.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import {OAuth2Client} from "google-auth-library"

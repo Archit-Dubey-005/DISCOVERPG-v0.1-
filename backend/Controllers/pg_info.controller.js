@@ -1,4 +1,4 @@
-import db from "../../database/db.js";
+import db from "../../dataBase/db.js";
 
 //  pg info
 async function createPgListing(req, res) {

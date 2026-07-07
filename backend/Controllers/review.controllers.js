@@ -1,5 +1,5 @@
 import "dotenv/config"
-import db from "../../database/db.js";
+import db from "../../dataBase/db.js";
 
 function createReview(req, res) {
   const userId = req.user.id;
