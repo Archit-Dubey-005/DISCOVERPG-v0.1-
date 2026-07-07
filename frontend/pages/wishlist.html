@@ -6,6 +6,11 @@
         if (localStorage.getItem('isLoggedIn') !== 'true') {
             window.location.href = '../login.html';
         }
+        // Wishlist is ONLY for students/users
+        if (localStorage.getItem('userRole') !== 'user') {
+            alert('Only students/guests can access the wishlist.');
+            window.location.href = '../index.html';
+        }
         document.addEventListener('DOMContentLoaded', () => {
             const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
             const userRole = localStorage.getItem('userRole');
@@ -21,26 +26,24 @@
             }
             if (userRole === 'owner') {
                 if (wishlistBtn) wishlistBtn.style.display = 'none';
-            } else {
-                if (wishlistBtn) wishlistBtn.style.display = 'inline-block';
             }
         });
         function handleLogout() {
             localStorage.removeItem('isLoggedIn');
             localStorage.removeItem('userRole');
             document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            window.location.reload();
+            window.location.href = '../index.html';
         }
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PG Houses Listing – DiscoverPG</title>
+    <title>My Wishlist – DiscoverPG</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap">
-        <link rel="stylesheet" href="../css/home.css">
-      <link rel="stylesheet" href="../css/about.css">
-        <link rel="stylesheet" href="../css/pg_details.css">
-          <link rel="stylesheet" href="../css/services.css">
-            <link rel="stylesheet" href="../css/STYLE.CSS">
+    <link rel="stylesheet" href="../css/home.css">
+    <link rel="stylesheet" href="../css/about.css">
+    <link rel="stylesheet" href="../css/pg_details.css">
+    <link rel="stylesheet" href="../css/services.css">
+    <link rel="stylesheet" href="../css/STYLE.CSS">
 </head>
 <body>
     <header class="header">
@@ -59,24 +62,10 @@
             </div>
         </nav>
     </header>
-    <div class="container">
-        <div class="filter-bar" id="filterBar">
-            <input type="text" id="filterCity" placeholder="City" title="City">
-            <input type="text" id="filterArea" placeholder="Area" title="Area">
-            <select id="filterType">
-                <option value="">All types</option>
-                <option value="boys">Boys</option>
-                <option value="girls">Girls</option>
-                <option value="flat">Flat</option>
-            </select>
-            <input type="number" id="filterMinRent" placeholder="Min rent" min="0" title="Min rent">
-            <input type="number" id="filterMaxRent" placeholder="Max rent" min="0" title="Max rent">
-            <button type="button" id="filterApply">Apply</button>
-            <button type="button" id="filterClear">Clear</button>
-        </div>
-        <h1>PG Houses Near You</h1>
+    <div class="container" style="max-width: 1200px; margin: 40px auto; padding: 0 20px;">
+        <h1 style="font-size: 28px; font-weight: bold; color: #333; margin-bottom: 30px;">My Saved PG List</h1>
         <div class="pg-grid" id="pgContainer"></div>
     </div>
-    <script src="../js/home.js"></script>
+    <script src="../js/wishlist.js"></script>
 </body>
 </html>

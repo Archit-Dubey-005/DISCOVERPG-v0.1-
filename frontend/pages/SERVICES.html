@@ -7,22 +7,53 @@
     <title>DiscoverPG - Services</title>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap">
-        <link rel="stylesheet" href="css/home.css">
-      <link rel="stylesheet" href="css/about.css">
-        <link rel="stylesheet" href="css/pg_details.css">
-          <link rel="stylesheet" href="css/services.css">
-            <link rel="stylesheet" href="css/STYLE.CSS">
+    <link rel="stylesheet" href="../css/home.css">
+    <link rel="stylesheet" href="../css/about.css">
+    <link rel="stylesheet" href="../css/pg_details.css">
+    <link rel="stylesheet" href="../css/services.css">
+    <link rel="stylesheet" href="../css/STYLE.CSS">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const userRole = localStorage.getItem('userRole');
+            const loginBtn = document.getElementById('navLoginBtn');
+            const logoutBtn = document.getElementById('navLogoutBtn');
+            const wishlistBtn = document.getElementById('navWishlist');
+            if (isLoggedIn) {
+                if (loginBtn) loginBtn.style.display = 'none';
+                if (logoutBtn) logoutBtn.style.display = 'inline-block';
+            } else {
+                if (loginBtn) loginBtn.style.display = 'inline-block';
+                if (logoutBtn) logoutBtn.style.display = 'none';
+            }
+            if (userRole === 'owner') {
+                if (wishlistBtn) wishlistBtn.style.display = 'none';
+            } else {
+                if (wishlistBtn) wishlistBtn.style.display = 'inline-block';
+            }
+        });
+        function handleLogout() {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('userRole');
+            document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            window.location.reload();
+        }
+    </script>
+</head>
+<body>
     <header class="header">
         <nav class="navbar" aria-label="Main navigation">
             <div class="nav-title">
-                <a href="index.html" class="logo">DiscoverPG</a>
+                <a href="../index.html" class="logo">DiscoverPG</a>
             </div>
             <div class="nav-right">
                 <a href="SERVICES.html">Services</a>
                 <a href="home.html">Map</a>
                 <a href="about.html">About</a>
-                <a href="wishlist.html">Wishlist</a>
+                <a href="wishlist.html" id="navWishlist">Wishlist</a>
                 <a href="post-pg.html" class="btn-post">Post your PG</a>
+                <a href="../login.html" id="navLoginBtn">Login / Sign Up</a>
+                <a href="#" id="navLogoutBtn" onclick="handleLogout()" style="display: none;">Log Out</a>
             </div>
         </nav>
     </header>

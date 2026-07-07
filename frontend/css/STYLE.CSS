@@ -71,21 +71,23 @@ body {
 }
 
 .btn-post {
-    background-color: var(--color-text);
-    color: var(--color-surface);
+     color:beige;
+    background-color: beige;
+   
     border: none;
     padding: 0.7rem 1.35rem;
     border-radius: 2rem;
     font-size: 1rem;
     font-weight: 500;
     font-family: var(--font-main);
+  
     cursor: pointer;
-    text-decoration: none;
+    text-decoration: beige;
     display: inline-block;
 }
 
 .btn-post:hover {
-    background-color: var(--color-text-dark);
+    background-color: beige;
 }
 
 .btn-post:focus-visible {
@@ -96,7 +98,8 @@ body {
 /* ─── Hero (main content) ─── */
 .hero-section {
     display: flex;
-    align-items: center;
+    justify-content: center;
+    top:100px;
     min-height: calc(100vh - 80px);
 }
 
@@ -115,14 +118,18 @@ body {
     color: var(--color-text);
     line-height: 1.2;
     margin-bottom: 1.5rem;
+    text-align: center;
 }
 
 .hero-text {
     font-size: 1.125rem;
     line-height: 1.65;
     color: var(--color-text);
+    margin-left: auto;
+    margin-right: auto;
     margin-bottom: 1rem;
     max-width: 520px;
+    text-align: center;
 }
 
 .hero-text:last-of-type {
@@ -130,7 +137,7 @@ body {
 }
 
 .btn-discover {
-    align-self: flex-start;
+    align-self: center;
     background-color: var(--color-text);
     color: var(--color-surface);
     border: none;

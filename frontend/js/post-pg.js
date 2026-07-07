@@ -28,12 +28,18 @@ async function handlePostPG(e) {
         // Step 1: collect text fields and POST the PG info
         const pgPayload = {
             name:           document.getElementById('pgName').value.trim(),
-            details:        document.getElementById('pgDetails').value.trim(),
-            accommodations: document.getElementById('accommodations').value.trim(),
+            contact_phone:  document.getElementById('contactPhone').value.trim(),
             type:           document.getElementById('pgType').value,
             rent:           Number(document.getElementById('pgRent').value),
-            contact_phone:  document.getElementById('contactPhone').value.trim(),
-            owner_name:     document.getElementById('ownerName').value.trim() || null,
+            deposit:        document.getElementById('pgDeposit').value ? Number(document.getElementById('pgDeposit').value) : null,
+            city:           document.getElementById('pgCity').value.trim(),
+            area:           document.getElementById('pgArea').value.trim(),
+            address:        document.getElementById('pgAddress').value.trim(),
+            total_beds:     document.getElementById('pgTotalBeds').value ? Number(document.getElementById('pgTotalBeds').value) : 0,
+            vacant_beds:    document.getElementById('pgVacantBeds').value ? Number(document.getElementById('pgVacantBeds').value) : 0,
+            accommodations: document.getElementById('accommodations').value.trim(),
+            rules:          document.getElementById('pgRules').value.trim(),
+            food_available: document.getElementById('pgFoodAvailable').checked,
         };
 
         // Basic client-side validation
@@ -41,8 +47,11 @@ async function handlePostPG(e) {
         if (!pgPayload.contact_phone) { showMessage('Contact number is required.', true); setSubmitLoading(false); return; }
         if (!pgPayload.type) { showMessage('Please select a type.', true); setSubmitLoading(false); return; }
         if (!pgPayload.rent || pgPayload.rent <= 0) { showMessage('Please enter a valid rent amount.', true); setSubmitLoading(false); return; }
+        if (!pgPayload.city) { showMessage('City is required.', true); setSubmitLoading(false); return; }
+        if (!pgPayload.area) { showMessage('Area is required.', true); setSubmitLoading(false); return; }
+        if (!pgPayload.address) { showMessage('Address details are required.', true); setSubmitLoading(false); return; }
 
-        const pgResponse = await fetch(`${API_BASE_URL}/pg_info/PG`, {
+        const pgResponse = await fetch(`${API_BASE_URL}/pg_info/createPG`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -57,22 +66,28 @@ async function handlePostPG(e) {
         const newPG = await pgResponse.json();
         const pgId = newPG.id || newPG.pg_id;
 
-        // Step 2: if an image was selected, upload it separately
-        const imageFile = document.getElementById('pgImage').files[0];
-        if (imageFile && pgId) {
-            const formData = new FormData();
-            formData.append('image', imageFile);
+        // Step 2: if images were selected, upload them sequentially
+        const imageFiles = document.getElementById('pgImage').files;
+        if (imageFiles.length > 0 && pgId) {
+            let uploadFailed = false;
+            for (let i = 0; i < imageFiles.length; i++) {
+                const file = imageFiles[i];
+                const formData = new FormData();
+                formData.append('image', file);
 
-            const imgResponse = await fetch(`${API_BASE_URL}/pg_info/images/${pgId}`, {
-                method: 'POST',
-                credentials: 'include',
-                body: formData,    // no Content-Type header — browser sets it with boundary automatically
-            });
+                const imgResponse = await fetch(`${API_BASE_URL}/pg_info/images/${pgId}/images`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData,    // no Content-Type header — browser sets it with boundary automatically
+                });
 
-            if (!imgResponse.ok) {
-                // PG was created but image failed — warn but don't block
-                console.warn('Image upload failed:', await imgResponse.text());
-                showMessage('PG listed! (Image upload failed — you can add it later.)');
+                if (!imgResponse.ok) {
+                    console.warn(`Image ${i+1} upload failed:`, await imgResponse.text());
+                    uploadFailed = true;
+                }
+            }
+            if (uploadFailed) {
+                showMessage('PG listed! (Some image uploads failed.)');
                 setSubmitLoading(false);
                 return;
             }

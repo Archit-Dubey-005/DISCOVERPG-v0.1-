@@ -82,8 +82,13 @@ function createPGCard(pg) {
                     ${isSaved ? 'SAVED' : 'SAVE'}
                 </button>
             </div>
-            <div class="address">
+            <div class="address" style="margin-bottom: 10px;">
+                <p style="font-weight: 600; color: #4b5563;">📍 ${escapeHtml(pg.area || '')}, ${escapeHtml(pg.city || '')}</p>
                 ${formatAddress(pg.address)}
+            </div>
+            <div class="card-footer-details" style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #6b7280; border-top: 1px solid #eee; padding-top: 10px; margin-top: 5px;">
+                <span>🛏️ ${pg.vacant_beds ?? 0} / ${pg.total_beds ?? 0} vacant</span>
+                ${pg.food_available ? '<span style="color: #059669; font-weight: 600;">🍲 Food Included</span>' : '<span style="color: #9ca3af;">No Food</span>'}
             </div>
         </div>
         </a>

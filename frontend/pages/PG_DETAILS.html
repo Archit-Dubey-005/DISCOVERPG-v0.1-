@@ -1,28 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+        // Redirect to login page if not authenticated
+        if (localStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = '../login.html';
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const userRole = localStorage.getItem('userRole');
+            const loginBtn = document.getElementById('navLoginBtn');
+            const logoutBtn = document.getElementById('navLogoutBtn');
+            const wishlistBtn = document.getElementById('navWishlist');
+            if (isLoggedIn) {
+                if (loginBtn) loginBtn.style.display = 'none';
+                if (logoutBtn) logoutBtn.style.display = 'inline-block';
+            } else {
+                if (loginBtn) loginBtn.style.display = 'inline-block';
+                if (logoutBtn) logoutBtn.style.display = 'none';
+            }
+            if (userRole === 'owner') {
+                if (wishlistBtn) wishlistBtn.style.display = 'none';
+            } else {
+                if (wishlistBtn) wishlistBtn.style.display = 'inline-block';
+            }
+        });
+        function handleLogout() {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('userRole');
+            document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            window.location.reload();
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DiscoverPG - Property Details</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap">
-        <link rel="stylesheet" href="css/home.css">
-      <link rel="stylesheet" href="css/about.css">
-        <link rel="stylesheet" href="css/pg_details.css">
-          <link rel="stylesheet" href="css/services.css">
-            <link rel="stylesheet" href="css/STYLE.CSS">
+        <link rel="stylesheet" href="../css/home.css">
+      <link rel="stylesheet" href="../css/about.css">
+        <link rel="stylesheet" href="../css/pg_details.css">
+          <link rel="stylesheet" href="../css/services.css">
+            <link rel="stylesheet" href="../css/STYLE.CSS">
 </head>
 <body>
     <header class="header">
         <nav class="navbar" aria-label="Main navigation">
             <div class="nav-title">
-                <a href="index.html" class="logo">DiscoverPG</a>
+                <a href="../index.html" class="logo">DiscoverPG</a>
             </div>
             <div class="nav-right">
                 <a href="SERVICES.html">Services</a>
                 <a href="home.html">Map</a>
                 <a href="about.html">About</a>
-                <a href="wishlist.html">Wishlist</a>
+                <a href="wishlist.html" id="navWishlist">Wishlist</a>
                 <a href="post-pg.html" class="btn-post">Post your PG</a>
+                <a href="../login.html" id="navLoginBtn">Login / Sign Up</a>
+                <a href="#" id="navLogoutBtn" onclick="handleLogout()" style="display: none;">Log Out</a>
             </div>
         </nav>
     </header>
@@ -89,11 +122,18 @@
             const typeStr = pg.type ? String(pg.type).charAt(0).toUpperCase() + String(pg.type).slice(1) : '';
             const amenities = pg.accommodations ? String(pg.accommodations).split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
             const priceIncludes = [];
-            if (pg.food_available) priceIncludes.push('Food available');
+            if (pg.food_available) priceIncludes.push('Food included');
             return {
                 id: pg.id,
                 name: pg.name || 'PG House',
-                description: [pg.rules, pg.accommodations].filter(Boolean).join(' ') || 'No description.',
+                address: pg.address || '',
+                city: pg.city || '',
+                area: pg.area || '',
+                rules: pg.rules || '',
+                deposit: pg.deposit,
+                food_available: pg.food_available,
+                total_beds: pg.total_beds,
+                vacant_beds: pg.vacant_beds,
                 images: imgList,
                 location: [pg.address, pg.area, pg.city].filter(Boolean).join(', ') || 'Address not specified',
                 rating: pg.rating != null ? Number(pg.rating) : 0,
@@ -101,17 +141,11 @@
                 reviews: Array.isArray(reviews) ? reviews : [],
                 price: pg.rent != null ? Number(pg.rent) : 0,
                 pricePeriod: 'per month',
-                priceIncludes: priceIncludes.length ? priceIncludes : ['Rent'],
+                priceIncludes: priceIncludes,
                 details: {
-                    type: typeStr ? typeStr + ' PG' : 'PG',
-                    totalRooms: pg.total_beds ?? '-',
-                    availableRooms: pg.vacant_beds ?? '-',
-                    sharingOptions: ['Single', 'Double', 'Triple'],
-                    floor: '-',
-                    area: pg.area || '-',
-                    furnishing: '-'
+                    type: typeStr ? typeStr + ' PG' : 'PG'
                 },
-                amenities: amenities.length ? amenities : ['WiFi', 'Security', 'Water'],
+                amenities: amenities,
                 owner: {
                     name: 'Owner',
                     phone: pg.contact_phone || '-',
@@ -167,11 +201,9 @@
         // Renders property – safe for missing/partial data from backend
         function renderPropertyDetails(property) {
             const images = Array.isArray(property.images) && property.images.length ? property.images : [];
-            const details = property.details || {};
             const owner = property.owner || {};
             const amenities = Array.isArray(property.amenities) ? property.amenities : [];
             const priceIncludes = Array.isArray(property.priceIncludes) ? property.priceIncludes : [];
-            const sharingOpts = Array.isArray(details.sharingOptions) ? details.sharingOptions : [];
 
             window._imgPlaceholder = '<div class="image-placeholder">Image not available</div>';
             const mainImgHtml = images[0]
@@ -192,6 +224,42 @@
                         return '<div class="review-item"><div class="review-header"><span class="review-author">' + safeName + '</span><span class="review-rating">⭐ ' + (r.rating || '-') + '</span></div><p class="review-comment">' + safeComment + '</p><div class="review-date">' + dateStr + '</div></div>';
                     }).join('')
                     + '</div>'
+                : '<div class="reviews-section"><h2>Reviews (0)</h2><p style="color:#666; font-size:14px; margin-bottom:0;">No reviews yet. Be the first to write a review!</p></div>';
+
+            // Add Review Submission form (only for students/users)
+            let writeReviewHtml = '';
+            if (localStorage.getItem('userRole') === 'user') {
+                writeReviewHtml = `
+                    <div class="write-review-section">
+                        <h2>Write a Review</h2>
+                        <form id="reviewForm" onsubmit="submitReview(event, ${property.id})">
+                            <div style="margin-bottom: 15px;">
+                                <label for="reviewRating">Rating</label>
+                                <select id="reviewRating" required>
+                                    <option value="5">⭐⭐⭐⭐⭐ (5)</option>
+                                    <option value="4">⭐⭐⭐⭐ (4)</option>
+                                    <option value="3">⭐⭐⭐ (3)</option>
+                                    <option value="2">⭐⭐ (2)</option>
+                                    <option value="1">⭐ (1)</option>
+                                </select>
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <label for="reviewComment">Comment</label>
+                                <textarea id="reviewComment" required placeholder="Share your experience staying here..." rows="4"></textarea>
+                            </div>
+                            <button type="submit" class="primary-button" id="btnSubmitReview">Submit Review</button>
+                            <p id="reviewMessage" style="margin-top: 10px; font-size: 14px; font-weight: 500; min-height: 20px;"></p>
+                        </form>
+                    </div>
+                `;
+            }
+
+            const showActions = localStorage.getItem('userRole') !== 'owner';
+            const actionButtonsHtml = showActions 
+                ? '<div class="action-buttons">'
+                    + '<button class="primary-button" onclick="bookNow(' + (property.id != null ? property.id : '0') + ')">Book Now</button>'
+                    + '<button class="secondary-button" onclick="addToWishlist(' + (property.id != null ? property.id : '0') + ')">❤️ Add to Wishlist</button>'
+                    + '</div>'
                 : '';
 
             const content = ''
@@ -199,7 +267,7 @@
                 + '<h1>' + (property.name || 'PG House').replace(/</g, '&lt;') + '</h1>'
                 + '<div class="property-location">' + (property.location || '').replace(/</g, '&lt;') + '</div>'
                 + '<div class="property-rating">'
-                + '<span class="rating-badge">⭐ ' + (property.rating != null ? property.rating : '-') + '</span>'
+                + '<span class="rating-badge">⭐ ' + (property.rating != null && property.rating > 0 ? Number(property.rating).toFixed(1) : 'New') + '</span>'
                 + '<span class="reviews-count">' + (property.totalReviews != null ? property.totalReviews : 0) + ' reviews</span>'
                 + '</div></div>'
                 + '<div class="property-grid">'
@@ -208,35 +276,32 @@
                 + '<div class="thumbnail-grid" id="thumbnailGrid">' + thumbnailsHtml + '</div>'
                 + '</div>'
                 + '<div class="property-info">'
-                + '<div class="property-description"><h2>About this Property</h2><p>' + (property.description || 'No description.').replace(/</g, '&lt;') + '</p></div>'
+                + '<div class="property-description"><h2>House Rules</h2><p>' + (property.rules || 'No specific rules.').replace(/</g, '&lt;') + '</p></div>'
                 + '<div class="property-price">'
                 + '<div class="price-label">Starting from</div>'
                 + '<div class="price-amount">₹' + (property.price != null ? Number(property.price).toLocaleString() : '0') + '</div>'
                 + '<div class="price-period">' + (property.pricePeriod || 'per month') + '</div>'
+                + (property.deposit != null ? '<div class="price-includes"><span>💰 Deposit: ₹' + Number(property.deposit).toLocaleString() + '</span></div>' : '')
                 + (priceIncludes.length ? '<div class="price-includes"><span>✅ ' + priceIncludes.join(' • ') + '</span></div>' : '')
                 + '</div>'
                 + (amenities.length ? '<div class="amenities-section"><h3>Popular Amenities</h3><div class="amenities-grid">'
                     + amenities.slice(0, 8).map(function(a) { return '<div class="amenity-item">' + String(a).replace(/</g, '&lt;') + '</div>'; }).join('')
                     + '</div></div>' : '')
-                + '<div class="action-buttons">'
-                + '<button class="primary-button" onclick="bookNow(' + (property.id != null ? property.id : '0') + ')">Book Now</button>'
-                + '<button class="secondary-button" onclick="addToWishlist(' + (property.id != null ? property.id : '0') + ')">❤️ Add to Wishlist</button>'
+                + actionButtonsHtml
                 + '</div></div></div>'
                 + '<div class="details-section">'
                 + '<h2>Property Details</h2>'
                 + '<div class="details-grid">'
-                + '<div class="detail-card"><h4>Property Type</h4><div class="detail-value">' + (details.type || '-') + '</div></div>'
-                + '<div class="detail-card"><h4>Total Beds</h4><div class="detail-value">' + (details.totalRooms ?? '-') + ' (' + (details.availableRooms ?? '-') + ' vacant)</div></div>'
-                + '<div class="detail-card"><h4>Sharing Options</h4><div class="detail-value">' + (sharingOpts.length ? sharingOpts.join(' • ') : '-') + '</div></div>'
-                + '<div class="detail-card"><h4>Floor</h4><div class="detail-value">' + (details.floor || '-') + '</div></div>'
-                + '<div class="detail-card"><h4>Area</h4><div class="detail-value">' + (details.area || '-') + '</div></div>'
-                + '<div class="detail-card"><h4>Furnishing</h4><div class="detail-value">' + (details.furnishing || '-') + '</div></div>'
+                + '<div class="detail-card"><h4>Property Type</h4><div class="detail-value">' + (property.details && property.details.type || '-') + '</div></div>'
+                + '<div class="detail-card"><h4>Total Capacity (Beds)</h4><div class="detail-value">' + (property.total_beds ?? '-') + ' beds</div></div>'
+                + '<div class="detail-card"><h4>Vacant Beds</h4><div class="detail-value">' + (property.vacant_beds ?? '-') + ' vacant</div></div>'
+                + '<div class="detail-card"><h4>City</h4><div class="detail-value">' + (property.city || '-') + '</div></div>'
+                + '<div class="detail-card"><h4>Area</h4><div class="detail-value">' + (property.area || '-') + '</div></div>'
+                + '<div class="detail-card"><h4>Food Available</h4><div class="detail-value">' + (property.food_available ? 'Yes' : 'No') + '</div></div>'
                 + '</div>'
-                + (amenities.length ? '<div style="margin-top: 40px;"><h3>All Amenities</h3><div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px;">'
-                    + amenities.map(function(a) { return '<div class="amenity-item">' + String(a).replace(/</g, '&lt;') + '</div>'; }).join('')
-                    + '</div></div>' : '')
                 + '</div>'
                 + reviewsHtml
+                + writeReviewHtml
                 + '<div class="owner-section">'
                 + '<div class="owner-info">'
                 + '<div class="owner-avatar">' + (owner.name ? String(owner.name).charAt(0).toUpperCase() : '?') + '</div>'
@@ -248,6 +313,18 @@
                 + '</div>';
 
             document.getElementById('propertyContent').innerHTML = content;
+            updateWishlistButton(property.id);
+        }
+
+        function updateWishlistButton(propertyId) {
+            const btn = document.querySelector('.secondary-button');
+            if (!btn) return;
+            const savedPGs = JSON.parse(localStorage.getItem('savedPGs')) || [];
+            if (savedPGs.map(id => String(id)).includes(String(propertyId))) {
+                btn.textContent = '❤️ Remove from Wishlist';
+            } else {
+                btn.textContent = '❤️ Add to Wishlist';
+            }
         }
 
         // Helper function to change main image
@@ -268,8 +345,29 @@
         }
 
         function addToWishlist(propertyId) {
-            alert(`Property ID: ${propertyId} added to wishlist`);
-            // TODO: Add to wishlist API call
+            if (localStorage.getItem('isLoggedIn') !== 'true') {
+                alert('Please login to add to wishlist.');
+                window.location.href = '../login.html';
+                return;
+            }
+            if (localStorage.getItem('userRole') !== 'user') {
+                alert('Only students/guests can have a wishlist.');
+                return;
+            }
+            let savedPGs = JSON.parse(localStorage.getItem('savedPGs')) || [];
+            savedPGs = savedPGs.map(id => String(id));
+            const idStr = String(propertyId);
+            const idx = savedPGs.indexOf(idStr);
+            if (idx === -1) {
+                savedPGs.push(idStr);
+                localStorage.setItem('savedPGs', JSON.stringify(savedPGs));
+                alert('Property added to your wishlist!');
+            } else {
+                savedPGs.splice(idx, 1);
+                localStorage.setItem('savedPGs', JSON.stringify(savedPGs));
+                alert('Property removed from your wishlist!');
+            }
+            updateWishlistButton(propertyId);
         }
 
         function contactOwner(propertyId, phone) {
@@ -277,6 +375,49 @@
                 window.location.href = 'tel:' + phone.replace(/\s/g, '');
             } else {
                 alert('Contact number not available.');
+            }
+        }
+
+        async function submitReview(event, propertyId) {
+            event.preventDefault();
+            const rating = document.getElementById('reviewRating').value;
+            const comment = document.getElementById('reviewComment').value.trim();
+            const msg = document.getElementById('reviewMessage');
+            const btn = document.getElementById('btnSubmitReview');
+
+            msg.textContent = '';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/reviews/pg/${propertyId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rating: Number(rating), comment: comment }),
+                    credentials: 'include'
+                });
+
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(data.message || `Server error: ${response.status}`);
+                }
+
+                msg.textContent = 'Review submitted successfully!';
+                msg.style.color = '#059669';
+                document.getElementById('reviewComment').value = '';
+
+                // Re-fetch details to show the new review and updated rating
+                setTimeout(() => {
+                    fetchPropertyData(propertyId);
+                }, 1200);
+
+            } catch (error) {
+                console.error(error);
+                msg.textContent = error.message.includes('Failed to fetch') 
+                    ? 'Could not connect to the backend server.' 
+                    : error.message;
+                msg.style.color = '#dc2626';
+            } finally {
+                btn.disabled = false;
             }
         }
 

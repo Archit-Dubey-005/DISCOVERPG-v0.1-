@@ -433,3 +433,68 @@
         flex-direction: column;
     }
 }
+
+/* Review Form Styles */
+.write-review-section {
+    margin-top: 30px;
+    padding: 25px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+.write-review-section h2 {
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 20px;
+}
+.write-review-section label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #4b5563;
+    display: block;
+    margin-bottom: 8px;
+}
+.write-review-section select,
+.write-review-section textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1.5px solid #e5e7eb;
+    background-color: #f9fafb;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    color: #222;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+.write-review-section select {
+    max-width: 200px;
+}
+.write-review-section select:focus,
+.write-review-section textarea:focus {
+    border-color: #059669;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.08);
+}
+.write-review-section button {
+    background: #059669;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    font-family: inherit;
+    margin-top: 10px;
+}
+.write-review-section button:hover {
+    background: #047857;
+}
+.write-review-section button:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
