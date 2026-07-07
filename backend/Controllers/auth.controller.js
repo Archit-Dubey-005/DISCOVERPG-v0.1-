@@ -24,8 +24,10 @@ function RegisterUser(req, res) {
     [email],
     (err, rows) => {
       if (err) {
+        console.error("Database SELECT error in RegisterUser:", err);
         return res.status(500).json({
           message: "Server error",
+          err: err.message,
         });
       }
 
@@ -307,8 +309,10 @@ function RegisterOwner(req, res) {
     [email],
     (err, rows) => {
       if (err) {
+        console.error("Database SELECT error in RegisterOwner:", err);
         return res.status(500).json({
           message: "Server error",
+          err: err.message,
         });
       }
 
