@@ -1,5 +1,13 @@
 import mysql from "mysql2"
-import "dotenv/config"
+import dotenv from "dotenv"
+import path from "path"
+import { fileURLToPath } from "url"
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Explicitly load the .env file from the backend directory
+dotenv.config({ path: path.resolve(__dirname, "../backend/.env") });
 
 // Helper to resolve template variables like ${{VAR}}
 function resolveEnvValue(val) {
@@ -25,9 +33,6 @@ const localPassword = process.env.password || '';
 const localDatabase = process.env.DATABASE_DB || '';
 const localPort = 3306;
 
-let poolConfig = {};
-
-// Helper to check if a value is resolved and not a placeholder
 const isResolved = (val) => {
   return val && typeof val === 'string' && !val.includes('${{') && val.trim() !== '';
 };
@@ -43,39 +48,113 @@ const isValidConnectionUrl = (url) => {
   }
 };
 
-// If a fully resolved connection URL is available, use it (typically for Railway or custom DB URI)
+// Build the candidate configurations in order of preference:
+// 1. Private Connection URL (best within Railway)
+// 2. Private Host/Port configuration
+// 3. Public Connection URL (if connecting from outside Railway)
+// 4. Local fallback config (localhost)
+const configs = [];
+
 if (isValidConnectionUrl(MYSQL_URL)) {
-  poolConfig = { uri: MYSQL_URL };
-} else if (isValidConnectionUrl(MYSQL_PUBLIC_URL)) {
-  poolConfig = { uri: MYSQL_PUBLIC_URL };
-} else {
-  // Otherwise, use individual parameters
-  // If MYSQLHOST is resolved to a valid non-empty host, use Railway credentials.
-  // If it's not resolved, we are likely running locally, so we fallback to local config.
-  if (isResolved(MYSQLHOST)) {
-    poolConfig = {
-      host: MYSQLHOST,
-      user: isResolved(MYSQLUSER) ? MYSQLUSER : 'root',
-      password: isResolved(MYSQLPASSWORD) ? MYSQLPASSWORD : '',
-      database: isResolved(MYSQLDATABASE) ? MYSQLDATABASE : '',
-      port: isResolved(MYSQLPORT) ? parseInt(MYSQLPORT, 10) : 3306
-    };
-  } else {
-    // Local fallback
-    poolConfig = {
-      host: localHost,
-      user: localUser,
-      password: localPassword,
-      database: localDatabase,
-      port: localPort
-    };
-  }
+  configs.push({ name: "Railway Private URL", uri: MYSQL_URL });
 }
 
-// Add common pool options
-poolConfig.waitForConnections = true;
-poolConfig.connectionLimit = 10;
+if (isResolved(MYSQLHOST)) {
+  configs.push({
+    name: "Railway Private Host Config",
+    host: MYSQLHOST,
+    user: isResolved(MYSQLUSER) ? MYSQLUSER : 'root',
+    password: isResolved(MYSQLPASSWORD) ? MYSQLPASSWORD : '',
+    database: isResolved(MYSQLDATABASE) ? MYSQLDATABASE : '',
+    port: isResolved(MYSQLPORT) ? parseInt(MYSQLPORT, 10) : 3306
+  });
+}
 
-const pool = mysql.createPool(poolConfig);
+if (isValidConnectionUrl(MYSQL_PUBLIC_URL)) {
+  configs.push({ name: "Railway Public URL", uri: MYSQL_PUBLIC_URL });
+}
 
-export default pool;
+// Always add local config as final fallback
+configs.push({
+  name: "Local Fallback",
+  host: localHost,
+  user: localUser,
+  password: localPassword,
+  database: localDatabase,
+  port: localPort
+});
+
+let activePool = null;
+let currentConfigIndex = 0;
+
+function createPoolForConfig(config) {
+  const { name, ...options } = config;
+  return mysql.createPool({
+    ...options,
+    connectTimeout: 3000, // 3 seconds timeout
+    waitForConnections: true,
+    connectionLimit: 10
+  });
+}
+
+// Initialize with the first configuration
+activePool = createPoolForConfig(configs[0]);
+
+// Proxy to intercept pool calls and delegate to the active pool
+const poolProxy = new Proxy({}, {
+  get(target, prop) {
+    if (prop === 'promise') {
+      return () => {
+        const promisePool = activePool.promise();
+        return new Proxy(promisePool, {
+          get(promiseTarget, promiseProp) {
+            const value = promiseTarget[promiseProp];
+            if (typeof value === 'function') {
+              return value.bind(promiseTarget);
+            }
+            return value;
+          }
+        });
+      };
+    }
+    const value = activePool[prop];
+    if (typeof value === 'function') {
+      return value.bind(activePool);
+    }
+    return value;
+  }
+});
+
+// Helper to switch to the next working configuration
+export async function ensureConnection() {
+  while (currentConfigIndex < configs.length) {
+    const config = configs[currentConfigIndex];
+    try {
+      await new Promise((resolve, reject) => {
+        activePool.query("SELECT 1", (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+      console.log(`Database connected successfully using: ${config.name}`);
+      return true;
+    } catch (err) {
+      console.warn(`Connection failed for config: ${config.name}. Error: ${err.message}`);
+      
+      // Close the current failing pool
+      activePool.end();
+      
+      currentConfigIndex++;
+      if (currentConfigIndex < configs.length) {
+        const nextConfig = configs[currentConfigIndex];
+        console.log(`Attempting fallback to: ${nextConfig.name}`);
+        activePool = createPoolForConfig(nextConfig);
+      } else {
+        throw new Error("All database configurations failed to connect.");
+      }
+    }
+  }
+  return false;
+}
+
+export default poolProxy;
