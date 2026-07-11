@@ -8,14 +8,15 @@ const __dirname = path.dirname(__filename);
 // Explicitly load the .env file from the backend directory
 env.config({ path: path.resolve(__dirname, "./.env") });
 import app from "./app.js"
-import db, { ensureConnection } from "../dataBase/db.js"
+import db from "../dataBase/db.js"
 const port=process.env.PORT||3100
 
 
 
 async function StartServer(){
     try{
- await ensureConnection();
+ await db.promise().query("SELECT 1");
+ console.log('Database successfully connected')
  app.listen(port,()=>{
      console.log(`Server running on port ${port}`)
  })
