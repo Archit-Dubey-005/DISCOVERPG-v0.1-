@@ -64,6 +64,8 @@ console.log(owner_id)
       return res.status(201).json({
         message: "PG listing created successfully",
         listingId: result.insertId,
+        id: result.insertId,
+        pg_id: result.insertId,
       });
     }
   );

@@ -66,7 +66,7 @@ async function handlePostPG(e) {
         }
 
         const newPG = await pgResponse.json();
-        const pgId = newPG.id || newPG.pg_id;
+        const pgId = newPG.id || newPG.pg_id || newPG.listingId;
 
         // Step 2: if images were selected, upload them sequentially
         const imageFiles = document.getElementById('pgImage').files;
