@@ -6,16 +6,16 @@ import imageService from "../Services/pg_image.storage.services.js";
 async function addImage(req, res) {
   const { pgId } = req.params;
   const ownerId = req.owner.id;
-console.log(ownerId)
-console.log(req.file.originalname)
-console.log(pgId)
-console.log(req.file.buffer)
-
   if (!req.file) {
     return res.status(400).json({ message: "No image uploaded" 
         
     });
   }
+
+console.log(ownerId)
+console.log(req.file.originalname)
+console.log(pgId)
+console.log(req.file.buffer)
 
 
   db.execute(
